@@ -1,6 +1,6 @@
 #coding: utf-8
 #Priject: Monitoring the RaspberryPi cluster with LED's.
-#Node: The worker nodes
+#Node: The master
 #Author: Jiahui Tang
 #Date: 2017-06-19
 
@@ -73,7 +73,7 @@ def main():
 			if not os.system(ping_cmd):
 				
 				#'free' status
-				if len(os.popen('ps -ef | grep spark://Worker').readlines()) < 3:
+				if len(os.popen('ps -ef | grep spark.deploy.SparkSubmit').readlines()) < 3:
 					
 					#test print, the node is free
 					print 'free'
