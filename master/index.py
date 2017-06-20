@@ -20,9 +20,15 @@ def GPIO_init():
 	GPIO.setup(RED, GPIO.OUT)
 	GPIO.setup(GREEN, GPIO.OUT)
 	GPIO.setup(BLUE, GPIO.OUT)
+	GPIO.output(RED,GPIO.HIGH)
+	GPIO.output(BLUE,GPIO.HIGH)
+	p = GPIO.PWM(GREEN,100)
+	p.start(100)
 
 def gpio_init(func):
 	def func():
+		GPIO_init()
+		GPIO.cleanup()
 		GPIO_init()
 		func()
 	
@@ -31,13 +37,13 @@ def gpio_init(func):
 #GPIO.cleanup()
 @gpio_init
 def GPIO_cleanup():
-	GPIO.output(RED,GPIO.LOW)
-	GPIO.output(GREEN,GPIO.LOW)
-	GPIO.output(BLUE,GPIO.LOW)
+	GPIO.output(RED,GPIO.HIGH)
+	GPIO.output(GREEN,GPIO.HIGH)
+	GPIO.output(BLUE,GPIO.HIGH)
 
 
 def on():
-	cmd = 'sudo python on.py &'
+	cmd = 'python on.py &'
 	os.system(cmd)
 
 def run():
@@ -45,16 +51,19 @@ def run():
 	os.system(cmd)
 
 def off():
-	cmd = 'sudo python off.py &'
+	cmd = 'python off.py &'
 	os.system(cmd)
 
 #the function of killing the process
 def kill_process(process):
 	ps_cmd = 'ps -ef | grep python | grep' + ' ' + process
-	for i in os.popen(kill_cmd).readlines():
-		pid = i.split()[1]
-		kill_cmd = 'kill -9' + ' ' + pid
-		os.system(kill_cmd)
+	lists = os.popen(ps_cmd).readlines()
+	for i in lists:
+		tmp = i.split()
+		if 'grep' not in tmp:
+			pid = tmp[1]
+			kill_cmd = 'kill -9' + ' ' + pid
+			os.system(kill_cmd)
 
 def kill_other(process):
 	if len(os.popen('ps -ef | grep python | grep {process}'.format(process = process)).readlines()) < 2:
@@ -65,6 +74,7 @@ def kill_other(process):
 		GPIO_cleanup()
 
 def main():
+	GPIO.cleanup()
 	try:
 		while True:
 			ping_cmd = 'ping -c 1 -W 1 -v {ip_address}'.format(ip_address = master_ip)
@@ -87,7 +97,8 @@ def main():
 					
 						else:
 							kill_process('run.py')
-							GPIO_cleanup()
+							GPIO.cleanup()
+							GPIO_init()
 						
 						#kill the process of 'off' status
 						if len(os.popen('ps -ef | grep python | grep off.py').readlines()) < 2:
@@ -95,7 +106,8 @@ def main():
 						
 						else:
 							kill_process('off.py')
-							GPIO_cleanup()
+							GPIO.cleanup()
+							GPIO_init()
 					
 						on()
 
@@ -116,8 +128,10 @@ def main():
 							pass
 
 						else:
+							print 'in'
 							kill_process('on.py')
-							GPIO_cleanup()
+							GPIO.cleanup()
+							GPIO_init()
 
 						#kill the process of 'off' status
 						if len(os.popen('ps -ef | grep python | grep off.py').readlines()) < 2:
@@ -125,8 +139,10 @@ def main():
 						
 						else:
 							kill_process('off.py')
-							GPIO_cleanup()
-
+							GPIO.cleanup()
+							GPIO_init()
+						
+						
 						run()
 
 					else:
@@ -147,7 +163,8 @@ def main():
 
 					else:
 						kill_process('on.py')
-						GPIO_cleanup()
+						GPIO.cleanup()
+						GPIO_init()
 
 					#kill the process of 'run' status
 					if len(os.popen('ps -ef | grep python | grep run.py').readlines()) < 2:
@@ -155,8 +172,9 @@ def main():
 
 					else:
 						kill_process('run.py')
-						GPIO_cleanup()
-
+						GPIO.cleanup()
+						GPIO_init()
+					
 					off()
 
 				else:
@@ -164,7 +182,7 @@ def main():
 
 	except Exception, e:
 		with open('monitor.log', 'a') as log:
-			log.write(e)
+			log.write(str(e))
 
 if __name__ == '__main__':
 	main()
